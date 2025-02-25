@@ -130,37 +130,28 @@ async def send_webhook_update(
     except Exception as e:
         logger.error(f"Webhook error for {task_id}: {str(e)}")
 
+        
 async def process_audio_task(
     task_id: str,
     file_path: Path,
     config: Dict[str, Any],
+    progress_callback: Optional[callable] = None,
     webhook_url: Optional[str] = None,
     user_id: Optional[str] = None
 ) -> None:
-    """Process audio file in background."""
+    """Process audio file in background with progress tracking."""
     if not pipeline:
         raise ASRException("Pipeline not initialized")
 
     try:
         active_tasks[task_id]['status'] = 'processing'
         
-        async def progress_callback(progress: float, status: str):
-            if task_id in active_tasks:  # Check if task still exists
-                active_tasks[task_id].update({
-                    'progress': progress,
-                    'status_detail': status
-                })
-                
-                if webhook_url:
-                    await send_webhook_update(webhook_url, task_id)
-        
+        # Use the new progress callback parameter
         result = await pipeline.process_file(
             str(file_path),
             config=config,
             progress_callback=progress_callback
-        )
-        
-        # Add metadata
+        )     # Add metadata
         result['metadata'].update({
             'task_id': task_id,
             'user_id': user_id,
