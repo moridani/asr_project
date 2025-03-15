@@ -1,88 +1,77 @@
-Installation Instructions for Windows:
+# Multilingual Speech Recognition System
 
-Create a virtual environment:
+An advanced Automatic Speech Recognition (ASR) system with multilingual support, focusing on French language accuracy and speaker diarization.
 
-python -m venv venv
-.\venv\Scripts\activate
+## Key Features
 
-Upgrade pip:
+- **Language Detection**: Accurate identification of spoken languages with French optimization
+- **Speech Recognition**: High-accuracy transcription using state-of-the-art models
+- **Speaker Diarization**: Precise speaker separation with overlap detection
+- **Translation**: Specialized processing for French-to-English translation
+- **Memory Optimization**: Efficient resource usage for processing long audio files
+- **Progress Tracking**: Real-time updates during processing
 
-python -m pip install --upgrade pip
+## Components
 
-Install Visual C++ Build Tools (if not installed):
+### 1. Language Detector
 
-Download and install from Microsoft's website
+Enhanced language detection with multiple model support:
 
+- **VoxLingua107**: Primary model for language identification
+- **Whisper**: Secondary model for cross-validation
+- **French-specific Model**: Additional optimization for French language
+- **Segmentation**: Advanced timeline segmentation for language changes
+- **Memory Management**: Efficient processing of large audio files
 
-Install CUDA Toolkit (if using GPU):
+### 2. Transcriber
 
-Install CUDA 12.1 from NVIDIA website
-Install cuDNN compatible with CUDA 12.1
+Enhanced transcription with optimized French language support:
 
+- **Whisper Large-v3**: Primary model for transcription
+- **Conformer**: Backup model for fallback processing
+- **French Wav2Vec2**: Specialized model for French content
+- **Custom Vocabulary**: Domain-specific term handling
+- **Batch Processing**: Efficient memory management for long files
 
-Install requirements:
+### 3. Diarizer
 
-pip install -r requirements.txt
-Would you like me to continue with implementing the remaining components with these 
+Enhanced speaker diarization with improved clustering:
 
-----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-# Advanced Multilingual Speech Recognition System
+- **PyAnnote**: Primary diarization model
+- **Multiple Embedding Types**: Combined ECAPA-TDNN and Resemblyzer
+- **Overlap Detection**: Identifies regions with multiple speakers
+- **Turn Analysis**: Recognizes conversation patterns
+- **Speaker Metrics**: Provides speaker balance and characteristics
 
-A high-performance, multilingual Automatic Speech Recognition (ASR) system with speaker diarization, language detection, and translation capabilities.
+### 4. Translator
 
-## Features
+Specialized translation for multilingual content:
 
-- **Language Detection**
-  - Accurate identification of multiple languages in conversations
-  - Real-time language switching detection
-  - Confidence scoring for language detection
-  - Support for 100+ languages
-
-- **Speech Recognition**
-  - High-accuracy transcription using Whisper large-v3
-  - Timestamped output with word-level alignment
-  - Noise-resistant processing
-  - Automatic punctuation and formatting
-
-- **Speaker Diarization**
-  - Precise speaker separation
-  - Overlap detection
-  - Speaker counting and identification
-  - Time-stamped speaker segments
-
-- **Translation**
-  - Specialized models for French, Arabic, Hindi, and Chinese
-  - High-quality translations with NLLB-200
-  - Context-aware translation
-  - Confidence scoring
+- **French-to-English**: Optimized for French content
+- **NLLB Model**: Support for 200+ languages
+- **Context-aware**: Maintains speaker context across translations
 
 ## System Requirements
 
-### Hardware
 - **CPU**: 8+ cores recommended
-- **RAM**: 64GB minimum
-- **GPU**: NVIDIA GPU with 24GB+ VRAM (e.g., RTX 4090, A5000)
-- **Storage**: 100GB+ SSD storage
-
-### Software
-- Windows 10/11 (64-bit)
-- Python 3.8+
-- CUDA 12.1+
-- FFmpeg
+- **RAM**: 16GB minimum (32GB+ recommended)
+- **GPU**: NVIDIA GPU with 8GB+ VRAM (16GB+ recommended for large models)
+- **Storage**: 20GB+ for models and cache
+- **Python**: 3.8+
+- **Dependencies**: PyTorch, Transformers, faster-whisper, pyannote-audio, etc.
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/asr-system.git
+git clone https://github.com/your-username/asr-system.git
 cd asr-system
 ```
 
-2. Create and activate virtual environment:
+2. Create and activate a virtual environment:
 ```bash
 python -m venv venv
-.\venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. Install dependencies:
@@ -90,15 +79,8 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-4. Install FFmpeg:
-```bash
-# Using Chocolatey
-choco install ffmpeg
-
-# Or download manually from FFmpeg website
-```
-
-5. Configure environment:
+4. Set up authentication (if needed):
+Copy the `.env.template` file to `.env` and update with your HuggingFace token:
 ```bash
 cp config/.env.template config/.env
 # Edit .env with your settings
@@ -107,136 +89,193 @@ cp config/.env.template config/.env
 ## Usage
 
 ### Command Line Interface
-```bash
-# Process single file
-python main.py process --file path/to/audio.wav
 
-# Batch processing
-python main.py batch-process --input-dir path/to/files --output-dir path/to/output
+#### Process a single file:
+
+```bash
+python main.py process_file --input-file path/to/audio.wav --output-file results.json
 ```
 
-### Web API
+#### Process multiple files in a batch:
+
 ```bash
-# Start the API server
-python main.py serve --port 8000
+python main.py batch_process --input-dir path/to/files --output-dir path/to/results
 ```
 
-Example API request:
+#### Start the API server:
+
+```bash
+python main.py start_server --host 0.0.0.0 --port 8000
+```
+
+### API Usage
+
+The system provides a RESTful API for processing audio files:
+
+#### Upload a file:
+
 ```python
 import requests
 
 # Upload file
-files = {'file': open('audio.wav', 'rb')}
-response = requests.post('http://localhost:8000/upload', files=files)
+with open('audio.wav', 'rb') as f:
+    response = requests.post('http://localhost:8000/upload', files={'file': f})
+    
 file_id = response.json()['file_id']
+```
 
-# Process file
+#### Process the file:
+
+```python
+# Create processing request
 config = {
-    'languages': ['fr', 'ar', 'hi'],
     'min_speakers': 1,
-    'max_speakers': 5
+    'max_speakers': 5,
+    'language_detection_confidence': 0.6
 }
-response = requests.post('http://localhost:8000/process', 
-                        json={'file_id': file_id, 'config': config})
+
+response = requests.post(
+    'http://localhost:8000/process',
+    json={'file_id': file_id, 'config': config}
+)
+
+task_id = response.json()['task_id']
+```
+
+#### Get results:
+
+```python
+# Check status
+status_response = requests.get(f'http://localhost:8000/status/{task_id}')
+status = status_response.json()
+
+# If completed, get results
+if status['status'] == 'completed':
+    result = requests.get(f'http://localhost:8000/result/{task_id}')
+    transcription = result.json()
 ```
 
 ## Configuration
 
-### Environment Variables
-- `DEVICE`: CPU or CUDA device selection
-- `BATCH_SIZE`: Processing batch size
-- `MAX_AUDIO_LENGTH`: Maximum audio length in seconds
-- `CACHE_DIR`: Model cache directory
-- See `.env.template` for all options
+### Main Configuration Options
 
-### Model Configuration
-- Language detection thresholds
-- Speaker separation parameters
-- Translation quality settings
-- See `config/settings.py` for details
+The system is highly configurable through `config/settings.py`:
 
-## API Documentation
+```python
+# Hardware configuration
+DEVICE = "cuda"  # or "cpu"
+NUM_THREADS = 4
+BATCH_SIZE = 8
 
-### Endpoints
+# Model selection
+WHISPER_MODEL = "large-v3"
+FRENCH_MODEL = "facebook/wav2vec2-large-xlsr-53-french"
+DIARIZATION_MODEL = "pyannote/speaker-diarization-3.1"
 
-#### POST /upload
-Upload audio file for processing
-- Supports WAV, MP3, FLAC, M4A, OGG
-- Maximum file size: 100MB
-- Returns file_id
-
-#### POST /process
-Start processing task
-- Requires file_id from upload
-- Optional configuration parameters
-- Returns task_id
-
-#### GET /status/{task_id}
-Get task status
-- Returns processing status and progress
-
-#### GET /result/{task_id}
-Get processing results
-- Returns complete analysis including:
-  - Transcriptions
-  - Translations
-  - Speaker segments
-  - Language distribution
-
-## Testing
-
-Run the test suite:
-```bash
-# Run all tests
-pytest tests/
-
-# Run specific test
-pytest tests/test_integration.py -v
-
-# Run with coverage
-pytest --cov=./ tests/
+# Processing parameters
+MIN_SPEAKERS = 1
+MAX_SPEAKERS = 10
+SAMPLE_RATE = 16000
 ```
+
+### Memory Optimization
+
+For systems with limited memory, adjust these settings:
+
+```python
+# Reduce memory usage
+WHISPER_MODEL = "medium"  # Use smaller model
+BATCH_SIZE = 4  # Process smaller batches
+MAX_CACHE_SIZE = 5 * 1024 * 1024 * 1024  # 5GB cache limit
+```
+
+### French Language Optimization
+
+The system is optimized for French language content:
+
+```python
+# French optimization settings
+OPTIMIZE_FOR_FRENCH = True
+FRENCH_MODEL = "facebook/wav2vec2-large-xlsr-53-french"
+```
+
+## Enhanced Components
+
+### Language Detector Enhancements
+
+- **Memory Optimization**: Controlled memory usage with cleanup routines
+- **French Detection**: Special handling for French language content
+- **Segment Refinement**: Improved boundary detection for language changes
+- **Progress Tracking**: Real-time progress updates during processing
+
+### Transcriber Enhancements
+
+- **Model Selection**: Intelligent selection based on detected language
+- **Segment Processing**: Memory-efficient batch processing
+- **Vocabulary Enhancement**: Custom vocabulary for domain-specific terms
+- **French Optimization**: Specialized handling for French pronunciation
+
+### Diarizer Enhancements
+
+- **Speaker Clustering**: Improved algorithm for speaker identification
+- **Overlap Detection**: Enhanced detection of overlapping speech
+- **Speaker Characteristics**: Analysis of speaking patterns
+- **Confidence Scoring**: Reliability metrics for speaker assignment
 
 ## Performance Optimization
 
-### GPU Optimization
-- Using mixed precision (FP16)
-- Batch processing for efficiency
-- Optimized CUDA operations
-- Memory management for large files
+### GPU Acceleration
+
+The system is optimized for GPU processing:
+
+```python
+# GPU optimization
+DEVICE = "cuda"
+GPU_MEMORY_FRACTION = 0.9
+```
 
 ### CPU Optimization
-- Thread pool management
-- Efficient memory usage
-- Parallel processing capabilities
-- Resource cleanup
+
+For CPU-only systems:
+
+```python
+# CPU optimization
+DEVICE = "cpu"
+NUM_THREADS = 8  # Adjust to your CPU core count
+USE_INT8_QUANTIZATION = True  # Use quantized models
+```
+
+### Memory Management
+
+The system includes advanced memory management:
+
+- Garbage collection after processing steps
+- Configurable cache size and cleanup
+- Batch processing for large files
+- Model unloading when not in use
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. CUDA Out of Memory
-```
-Solution: Adjust BATCH_SIZE in .env file
-```
+1. **Out of Memory Errors**:
+   - Reduce `BATCH_SIZE` in settings
+   - Use a smaller Whisper model
+   - Enable quantization for reduced memory usage
 
-2. Audio Processing Errors
-```
-Solution: Ensure FFmpeg is properly installed
-```
+2. **Slow Processing**:
+   - Ensure GPU is being utilized (`DEVICE="cuda"`)
+   - Increase `BATCH_SIZE` if memory allows
+   - Adjust `NUM_THREADS` for CPU processing
 
-3. Model Loading Issues
-```
-Solution: Clear cache directory and reinstall models
-```
+3. **Inaccurate Diarization**:
+   - Adjust `MIN_SPEAKERS` and `MAX_SPEAKERS`
+   - Increase `OVERLAP_THRESHOLD` for better detection
+   - Check audio quality and consider pre-processing
 
-## Contributing
+## Contributors
 
-1. Fork the repository
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Create Pull Request
+- Your Name <your.email@example.com>
 
 ## License
 
@@ -245,11 +284,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - OpenAI Whisper
-- NLLB-200
-- PyAnnote
+- PyAnnote Audio
 - SpeechBrain
-- Transformers
-
-## Contact
-
-For support or questions, please contact [email/contact information].
+- Hugging Face Transformers

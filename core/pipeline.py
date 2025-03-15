@@ -56,6 +56,7 @@ class ASRPipeline:
             max_size_gb=self.config.get('max_cache_size', 10)
         )
 
+# Update initialization to include new parameters
     def _initialize_components(self) -> None:
         """Initialize pipeline components with error handling."""
         try:
@@ -66,28 +67,33 @@ class ASRPipeline:
             
             self.language_detector = LanguageDetector(
                 device=self.device,
-                cache_manager=self.cache_manager
+                cache_manager=self.cache_manager,
+                config=self.config.get('language_detection', {})  # Pass specific config
             )
             
             self.transcriber = Transcriber(
                 device=self.device,
-                cache_manager=self.cache_manager
+                cache_manager=self.cache_manager,
+                config=self.config.get('transcription', {})  # Pass specific config
             )
             
             self.diarizer = Diarizer(
                 device=self.device,
-                cache_manager=self.cache_manager
+                cache_manager=self.cache_manager,
+                config=self.config.get('diarization', {})  # Pass specific config
             )
             
             self.translator = Translator(
                 device=self.device,
-                cache_manager=self.cache_manager
+                cache_manager=self.cache_manager,
+                config=self.config.get('translation', {})  # Pass specific config
             )
+            
+            logger.info("Pipeline components initialized successfully")
             
         except Exception as e:
             logger.error(f"Failed to initialize components: {str(e)}")
             raise ASRException("Pipeline initialization failed") from e
-
     async def process_file(
         self,
         file_path: str,
