@@ -8,6 +8,11 @@ import secrets
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 import time
 import hashlib
+# After
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 try:
     import redis
     REDIS_AVAILABLE = True
@@ -56,11 +61,16 @@ class CustomAPIKeyHeader(APIKeyHeader):
 api_key_header = CustomAPIKeyHeader(name="X-API-Key", auto_error=False)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
-# JWT Configuration with validation
-if not settings.JWT_SECRET_KEY:
-    raise ValueError("JWT_SECRET_KEY must be set in settings")
 
-JWT_SECRET_KEY = settings.JWT_SECRET_KEY.encode('utf-8')  # Ensure bytes for PyJWT
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "").encode('utf-8')
+if not JWT_SECRET_KEY:
+    raise ValueError("JWT_SECRET_KEY must be set in environment variables")
+
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
@@ -453,9 +463,11 @@ class AuthManager:
             if cached_data:
                 return AuthData(**cached_data)
 
-            # Validate key
+
+            API_KEY = os.getenv("API_KEY", "")
             key_hash = hashlib.sha256(api_key.encode()).hexdigest()
-            if key_hash == settings.API_KEY_HASH:
+            stored_hash = hashlib.sha256(API_KEY.encode()).hexdigest() if API_KEY else ""
+            if key_hash == stored_hash:
                 auth_data = AuthData(
                     user_id="api_user",
                     username="api_user",

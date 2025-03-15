@@ -20,6 +20,11 @@ import shutil
 import logging
 from loguru import logger
 import sys
+# After
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Optional GPU support
 try:
@@ -303,9 +308,11 @@ async def login_for_access_token(
     """Obtain JWT token for authentication."""
     try:
         # In production, validate against database
-        if form_data.username == settings.TEST_USER and \
-           form_data.password == settings.TEST_PASSWORD:
-            
+        test_user = os.getenv("TEST_USER")
+        test_password = os.getenv("TEST_PASSWORD")
+
+        if form_data.username == test_user and \
+        form_data.password == test_password:            
             access_token = await auth_manager.create_access_token(
                 data={"sub": form_data.username}
             )

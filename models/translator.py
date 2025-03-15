@@ -14,7 +14,10 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 from pathlib import Path
 import json
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 class Translator:
     def __init__(
         self,
@@ -40,8 +43,8 @@ class Translator:
         """Load and validate configuration."""
         default_config = {
             'model_paths': {
-                'french': "Helsinki-NLP/opus-mt-fr-en",
-                'nllb': "facebook/nllb-200-1.3B"
+                'french': os.getenv("FRENCH_MODEL_PATH", "Helsinki-NLP/opus-mt-fr-en"),
+                'nllb': os.getenv("NLLB_MODEL_PATH", "facebook/nllb-200-1.3B")
             },
             'batch_size': 8,
             'max_length': 512,

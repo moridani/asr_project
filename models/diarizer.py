@@ -15,6 +15,10 @@ from pathlib import Path
 import gc
 import psutil
 import os
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class DiarizationResult:
     """Structured class for diarization results"""
@@ -152,9 +156,10 @@ class Diarizer:
             os.environ['PYANNOTE_CACHE'] = str(cache_dir)
             
             # Initialize model with proper device
+            hf_token = os.getenv("HF_TOKEN")
             self.pyannote = Pipeline.from_pretrained(
                 "pyannote/speaker-diarization-3.1",
-                use_auth_token=self.config.get('hf_token'),
+                use_auth_token=hf_token,
                 cache_dir=str(cache_dir)
             ).to(self.device)
             
